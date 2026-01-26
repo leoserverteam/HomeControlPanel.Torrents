@@ -1,0 +1,7 @@
+﻿services:
+  hcp.torrents:
+    image: hcp.torrents
+    build:
+      context: .
+      dockerfile: Dockerfile
+
