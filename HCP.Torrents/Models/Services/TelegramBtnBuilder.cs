@@ -22,38 +22,49 @@ public class TelegramBtnBuilder
         List<InlineKeyboardButton[]> btns = new List<InlineKeyboardButton[]>();
         foreach (var torrent in torrents)
         {
-            btns.Add(new []
+            if (torrent.Name.Length > 30)
             {
-                InlineKeyboardButton.WithCallbackData(torrent.Name[..30]+"...", $"edit-{torrent.Hash}")
-            });
+                btns.Add(new []
+                {
+                    InlineKeyboardButton.WithCallbackData(torrent.Name[..30]+"...", $"edit-{torrent.Hash}")
+                });
+            }
+            else
+            {
+                btns.Add(new []
+                {
+                    InlineKeyboardButton.WithCallbackData(torrent.Name, $"edit-{torrent.Hash}")
+                });
+            }
         }
         return new InlineKeyboardMarkup(btns);
         
     }
 
-    public async Task<InlineKeyboardMarkup> EditMenu(Torrent torrent, )
+    public async Task<InlineKeyboardMarkup> EditMenu(Torrent torrent, List<Category> categories )
     {
         List<InlineKeyboardButton[]> btns = new List<InlineKeyboardButton[]>();
-        if (torrent.Status == TorrentState.Downloading)
+        var subbtn = new List<InlineKeyboardButton>();
+        foreach (var category in categories)
         {
-            btns.Add(new []
+            if (category.Name == torrent.Category)
             {
-                InlineKeyboardButton.WithCallbackData("Остановить", $"stop-{torrent.Hash}")
-            });
+                subbtn.Add(InlineKeyboardButton.WithCallbackData($"✔️{category.Name}", $"{torrent.Hash}-setcat-{category.Name}"));
+            }
+            else
+            {
+                subbtn.Add(InlineKeyboardButton.WithCallbackData($"{category.Name}", $"{torrent.Hash}-setcat-{category.Name}"));
+            }
         }
-        else if (torrent.Status == TorrentState.PausedDownload || torrent.Status == TorrentState.PausedUpload)
+        btns.Add(subbtn.ToArray());
+        btns.Add(new []
         {
-            btns.Add(new []
-            {
-                InlineKeyboardButton.WithCallbackData("Запустить", $"start-{torrent.Hash}")
-            });
-        }
-        else
+            InlineKeyboardButton.WithCallbackData("Удалить вместе с файлами", $"delete-{torrent.Hash}")
+        });
+        btns.Add(new []
         {
-            btns.Add(new []
-            {
-                InlineKeyboardButton.WithCallbackData("Попробовать запустить", $"start-{torrent.Hash}")
-            });
-        }
+            InlineKeyboardButton.WithCallbackData("Вернуться", $"torrents")
+        });
+        return new InlineKeyboardMarkup(btns);
     }
 }

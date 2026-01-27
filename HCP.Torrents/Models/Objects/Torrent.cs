@@ -13,6 +13,6 @@ public class Torrent
     
     public override string ToString()
     {
-        return $"{Name}\nСтатус - {Status}\nПрогресс загрузки - {Progress}%\nКатегория:{Category}";
+        return $"{Name}\nСтатус - {Status}\nПрогресс загрузки - {Progress}%\nКатегория: {Category}";
     }
 }

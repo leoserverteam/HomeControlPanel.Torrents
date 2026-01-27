@@ -1,7 +1,17 @@
 ﻿services:
-  hcp.torrents:
-    image: hcp.torrents
-    build:
-      context: .
-      dockerfile: Dockerfile
+  app-service:
+    build: .
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    container_name: hcp.torrents
+    ports:
+      - "6060:8080"  
+    restart: always
+    env_file:
+      - .env
+    networks:
+      - app-network
 
+networks:
+  app-network:
+    driver: bridge

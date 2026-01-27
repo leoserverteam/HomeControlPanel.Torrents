@@ -64,15 +64,97 @@ public class TorrentService (IQBittorrentClient2 client, ILog log)
         }
     }
 
-    public async Task<IReadOnlyDictionary<string, Category>> GetCategories()
+    public async Task<Torrent> GetTorrent(string hash)
     {
         try
         {
-            return await client.GetCategoriesAsync();
+            var torrentInfo =  await client.GetTorrentListAsync();
+            var torrent = torrentInfo.FirstOrDefault(t => t.Hash == hash);
+            return new Torrent
+            {
+                Name = torrent.Name,
+                Category = torrent.Category,
+                Hash =  torrent.Hash,
+                Progress = (int)(torrent.Progress *100),
+                Status = torrent.State
+            };
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            log.Error(e, "Error deleting torrent");
+            throw;
+        }
+    }
+
+    public async Task<List<Category>> GetCategories()
+    {
+        try
+        {
+            var categoryList = new List<Category>();
+            var categoriesInfo =  await client.GetCategoriesAsync();
+            foreach (var categoryInfo in categoriesInfo)
+            {
+                categoryList.Add(categoryInfo.Value);
+            }
+
+            return categoryList;
+
+        }
+        catch (Exception e)
+        {
+            log.Error(e, "Error getting categories");
+            throw;
+        }
+    }
+
+    public async Task SetCategory(string category, string hash)
+    {
+        try
+        {
+            await client.SetTorrentCategoryAsync(hash, category);
+        }
+        catch (Exception e)
+        {
+            log.Error(e, "Error setting category");
+            throw;
+        }
+    }
+
+    public async Task DeleteTorrent(string hash)
+    {
+        try
+        {
+            await client.DeleteAsync(hash, true);
+        }
+        catch (Exception e)
+        {
+            log.Error(e, "Error deleting torrent");
+            throw;
+        }
+    }
+
+    public async Task ResumeTorrent(string hash)
+    {
+        try
+        {
+            await client.ResumeAsync(hash);
+        }
+        catch (Exception e)
+        {
+            log.Error(e, "Error resuming torrent");
+            throw;
+        }
+    }
+
+    public async Task PauseTorrent(string hash)
+    {
+        try
+        {
+            await client.PauseAsync(hash);
+        }
+        catch (Exception e)
+        {
+            log.Error(e, "Error pausing torrent");
             throw;
         }
     }

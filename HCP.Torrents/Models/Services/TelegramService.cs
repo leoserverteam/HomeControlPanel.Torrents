@@ -21,8 +21,8 @@ public class TelegramService (ITelegramBotClient botClient, ILog log, TorrentSer
                 log.Info("torrent downloaded");
             }
 
-            torrentService.AddTorrent(uploadsFolder);
-            botClient.SendMessage(message.Chat.Id, "Торрент файл добавлен на сервер, загрузка началась");
+            await torrentService.AddTorrent(uploadsFolder);
+            await botClient.SendMessage(message.Chat.Id, "Торрент файл успешно прочитан");
         }
         catch (Exception e)
         {
@@ -36,7 +36,7 @@ public class TelegramService (ITelegramBotClient botClient, ILog log, TorrentSer
         try
         {
             await torrentService.AddMagnet(message.Text);
-            await botClient.SendMessage(message.Chat.Id, "Добавлен торрент по magnet ссылке, загрузка началась");
+            await botClient.SendMessage(message.Chat.Id, "Magnet ссылка успешно прочитана");
         }
         catch (Exception e)
         {
@@ -79,16 +79,48 @@ public class TelegramService (ITelegramBotClient botClient, ILog log, TorrentSer
         try
         {
             var hash = query.Data.Substring("edit-".Length);
-            var torrents = await torrentService.GetTorrents();
-            var torrent = torrents.FirstOrDefault(t => t.Hash == hash);
+            var torrent = await torrentService.GetTorrent(hash);
             await botClient.EditMessageText(query.Message.Chat.Id, query.Message.MessageId, torrent.ToString());
-            
+            await botClient.EditMessageReplyMarkup(query.Message.Chat.Id, query.Message.MessageId,  await btn.EditMenu(torrent, await torrentService.GetCategories()));
         }
         catch (Exception e)
         {
-            Console.WriteLine(e);
+            log.Error(e);
             throw;
         }
     }
+
+    public async Task SetCategory(CallbackQuery query)
+    {
+        var parts = query.Data.Split(new []{"-setcat-"}, StringSplitOptions.None);
+        var hash = parts[0];
+        var category = parts[1];
+        await torrentService.SetCategory(category, hash);
+        var torrent = await torrentService.GetTorrent(hash);
+        await botClient.EditMessageText(query.Message.Chat.Id, query.Message.MessageId, torrent.ToString());
+        await botClient.EditMessageReplyMarkup(query.Message.Chat.Id, query.Message.MessageId,  await btn.EditMenu(torrent, await torrentService.GetCategories()));
+    }
+
+    public async Task Delete(CallbackQuery query)
+    {
+        var hash = query.Data.Substring("delete-".Length);
+        await torrentService.DeleteTorrent(hash);
+        await botClient.EditMessageText(query.Message.Chat.Id, query.Message.MessageId, "Торрент удален");
+        await botClient.EditMessageReplyMarkup(query.Message.Chat.Id, query.Message.MessageId, btn.MainMenu());
+    }
+
+    public async Task AddedTorrentNote(string hash)
+    {
+        var torrent = await torrentService.GetTorrent(hash);
+        await botClient.SendMessage(Environment.GetEnvironmentVariable("ADMIN"),
+        $"Добавлен торрент\n{torrent}", replyMarkup:await btn.EditMenu(torrent, await torrentService.GetCategories()));
+    }
+
+    public async Task CompletedTorrentNote(string hash)
+    {
+        var torrent = await torrentService.GetTorrent(hash);
+        await botClient.SendMessage(Environment.GetEnvironmentVariable("ADMIN"), $"Загружен торрент:\b{torrent.Name}");
+    }
+    
     
 }
