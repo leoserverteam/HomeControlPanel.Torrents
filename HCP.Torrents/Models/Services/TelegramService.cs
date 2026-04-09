@@ -1,3 +1,4 @@
+using HS.Server.Models.Objects;
 using QBittorrent.Client;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -31,6 +32,13 @@ public class TelegramService (ITelegramBotClient botClient, ILog log, TorrentSer
         }
     }
 
+    public async Task MainMenuShow(Message message)
+    {
+        var categories = await torrentService.GetCategories(); 
+        await botClient.SendMessage(message.Chat.Id,
+            "Добро пожаловать в HomeControlPanel - Torrents", replyMarkup: btn.MainMenu(categories));
+        
+    }
     public async Task AddTorrentMagnet(Message message)
     {
         try
@@ -50,27 +58,47 @@ public class TelegramService (ITelegramBotClient botClient, ILog log, TorrentSer
         try
         {
             var torrents = await torrentService.GetTorrents();
-            string sendingString = "Список Торрентов\n\n";
-            if (torrents.Count > 0)
-            {
-                foreach (var torrent in torrents)
-                {
-                    sendingString +=
-                        $"{torrent}\n\n\n";
-                }
-                await botClient.DeleteMessage(query.Message.Chat.Id, query.Message.MessageId);
-                await botClient.SendMessage(query.Message.Chat.Id, sendingString, replyMarkup: await btn.ControlMenu(torrents));
-            }
-            else
-            {
-                await botClient.DeleteMessage(query.Message.Chat.Id, query.Message.MessageId);
-                await botClient.SendMessage(query.Message.Chat.Id, "Ни одного торрента не добавлено", replyMarkup: btn.MainMenu());
-            }
+            await SendTorrents(torrents, query);
         }
         catch (Exception e)
         {
             log.Error(e);
             throw;
+        }
+    }
+
+    public async Task GetTorrentsByCategory(CallbackQuery query)
+    {
+        try
+        {
+            var category = query.Data.Substring("torrentsshow-".Length);
+            var torrents = await torrentService.GetTorrents(category);
+            await SendTorrents(torrents, query);
+        }
+        catch (Exception e)
+        {
+            log.Error(e);
+            throw;
+        }
+    }
+
+    private async Task SendTorrents(List<Torrent> torrents,  CallbackQuery query)
+    {
+        string sendingString = "Список Торрентов\n\n";
+        if (torrents.Count > 0)
+        {
+            foreach (var torrent in torrents)
+            {
+                sendingString +=
+                    $"{torrent}\n\n\n";
+            }
+            await botClient.DeleteMessage(query.Message.Chat.Id, query.Message.MessageId);
+            await botClient.SendMessage(query.Message.Chat.Id, sendingString, replyMarkup: await btn.ControlMenu(torrents));
+        }
+        else
+        {
+            await botClient.DeleteMessage(query.Message.Chat.Id, query.Message.MessageId);
+            await botClient.SendMessage(query.Message.Chat.Id, "Ни одного торрента не добавлено", replyMarkup: btn.MainMenu(await torrentService.GetCategories()));
         }
     }
 
@@ -106,7 +134,7 @@ public class TelegramService (ITelegramBotClient botClient, ILog log, TorrentSer
         var hash = query.Data.Substring("delete-".Length);
         await torrentService.DeleteTorrent(hash);
         await botClient.EditMessageText(query.Message.Chat.Id, query.Message.MessageId, "Торрент удален");
-        await botClient.EditMessageReplyMarkup(query.Message.Chat.Id, query.Message.MessageId, btn.MainMenu());
+        await botClient.EditMessageReplyMarkup(query.Message.Chat.Id, query.Message.MessageId, btn.MainMenu(await torrentService.GetCategories()));
     }
 
     public async Task AddedTorrentNote(string hash)

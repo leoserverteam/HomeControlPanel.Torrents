@@ -6,15 +6,21 @@ namespace HS.Server.Models.Services;
 
 public class TelegramBtnBuilder 
 {
-    public InlineKeyboardMarkup MainMenu()
+    public InlineKeyboardMarkup MainMenu(List<Category> categories)
     {
-        return new InlineKeyboardMarkup(new[]
+        List<InlineKeyboardButton[]> btns = new List<InlineKeyboardButton[]>();
+        btns.Add(new[]
         {
-            new[]
-            {
-                InlineKeyboardButton.WithCallbackData("Список торрентов", "torrents"), 
-            },
+            InlineKeyboardButton.WithCallbackData("Список всех торрентов", "torrents"), 
         });
+        foreach (var category in categories)
+        {
+            btns.Add(new[]
+            {
+                InlineKeyboardButton.WithCallbackData(category.Name, $"torrentsshow-{category.Name}"), 
+            });
+        }
+        return new InlineKeyboardMarkup(btns);
     }
 
     public async Task<InlineKeyboardMarkup> ControlMenu(List<Torrent> torrents)

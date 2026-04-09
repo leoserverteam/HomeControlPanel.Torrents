@@ -17,50 +17,59 @@ public class UpdateHandler (ILog log, TelegramBtnBuilder btn, TelegramService te
             switch (update.Type)
             {
                 case UpdateType.Message:
-                    log.Info("new message");
-                    if (update.Message.Type == MessageType.Document)
-                    {
-                        if (update.Message.Document.FileName.EndsWith(".torrent"))
+                    if (update.Message.From.Id.ToString() == Environment.GetEnvironmentVariable("ADMIN"))
                         {
-                            await telegramService.AddTorrentFile(update.Message);
-                        }
-                    }
-                    else
-                    {
-                        if (update.Message.Text == "/start")
-                        {
-                            await botClient.SendMessage(update.Message.Chat.Id,
-                                "Добро пожаловать в HomeControlPanel - Torrents", replyMarkup: btn.MainMenu());
-                        }
-                        var math = Regex.Match(update.Message.Text,
-                            "magnet:\\?xt=urn:btih:[a-zA-Z0-9]{32,40}(?:&[a-zA-Z0-9%?=&-]+)*", RegexOptions.IgnoreCase);
-                        if (math.Success)
-                        {
-                            telegramService.AddTorrentMagnet(update.Message);
-                        }
-                    }
-                    
+                            log.Info("new message");
+                            if (update.Message.Type == MessageType.Document)
+                            {
+                                if (update.Message.Document.FileName.EndsWith(".torrent"))
+                                {
+                                    await telegramService.AddTorrentFile(update.Message);
+                                }
+                            }
+                            else
+                            {
+                                if (update.Message.Text == "/start")
+                                {
+                                    telegramService.MainMenuShow(update.Message);
+                                }
+                                var math = Regex.Match(update.Message.Text,
+                                    "magnet:\\?xt=urn:btih:[a-zA-Z0-9]{32,40}(?:&[a-zA-Z0-9%?=&-]+)*", RegexOptions.IgnoreCase);
+                                if (math.Success)
+                                {
+                                    telegramService.AddTorrentMagnet(update.Message);
+                                }
+                            }
+                        } 
                     break;
                 case  UpdateType.CallbackQuery:
-                    log.Info("new callback query");
-                    if (update.CallbackQuery.Data == "torrents")
+                    if (update.CallbackQuery.From.Id.ToString() == Environment.GetEnvironmentVariable("ADMIN"))
                     {
-                        await telegramService.GetTorrents(update.CallbackQuery);
-                    }
+                        log.Info("new callback query");
+                        if (update.CallbackQuery.Data == "torrents")
+                        {
+                            await telegramService.GetTorrents(update.CallbackQuery);
+                        }
 
-                    if (update.CallbackQuery.Data.Contains("edit-"))
-                    {
-                        await telegramService.EditTorrent(update.CallbackQuery);
-                    }
+                        if (update.CallbackQuery.Data.Contains("edit-"))
+                        {
+                            await telegramService.EditTorrent(update.CallbackQuery);
+                        }
                     
-                    if (update.CallbackQuery.Data.Contains("-setcat-"))
-                    {
-                        await telegramService.SetCategory(update.CallbackQuery);
-                    }
+                        if (update.CallbackQuery.Data.Contains("-setcat-"))
+                        {
+                            await telegramService.SetCategory(update.CallbackQuery);
+                        }
 
-                    if (update.CallbackQuery.Data.Contains("delete-"))
-                    {
-                        await telegramService.Delete(update.CallbackQuery);
+                        if (update.CallbackQuery.Data.Contains("delete-"))
+                        {
+                            await telegramService.Delete(update.CallbackQuery);
+                        }
+
+                        if (update.CallbackQuery.Data.Contains("torrentsshow-"))
+                        {
+                            await telegramService.GetTorrentsByCategory(update.CallbackQuery);
+                        }
                     }
                     break;
             }

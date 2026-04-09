@@ -42,26 +42,47 @@ public class TorrentService (IQBittorrentClient2 client, ILog log)
         try
         {
             var torrentsInfo = await client.GetTorrentListAsync();
-            var torrents = new List<Torrent>();
-            foreach (var torrentInfo in torrentsInfo)
-            {
-                torrents.Add(new Torrent
-                {
-                    Hash = torrentInfo.Hash,
-                    Name = torrentInfo.Name,
-                    Category = torrentInfo.Category,
-                    Progress = (int)(torrentInfo.Progress *100),
-                    Status = torrentInfo.State
-                });
-            }
-
-            return torrents;
+            return Map(torrentsInfo);
         }
         catch (Exception e)
         {
             log.Error(e, "Error getting torrents");
             throw;
         }
+    }
+
+    public async Task<List<Torrent>> GetTorrents(string category)
+    {
+        try
+        {
+            var torrentsInfo = await client.GetTorrentListAsync(new TorrentListQuery
+            {
+                Category = category,
+            });
+            return Map(torrentsInfo);
+        }
+        catch (Exception e)
+        {
+            log.Error(e, "Error getting torrents");
+            throw;
+        }
+    }
+
+    private List<Torrent> Map(IReadOnlyList<TorrentInfo> torrentsInfo)
+    {
+        var torrents = new List<Torrent>();
+        foreach (var torrentInfo in torrentsInfo)
+        {
+            torrents.Add(new Torrent
+            {
+                Hash = torrentInfo.Hash,
+                Name = torrentInfo.Name,
+                Category = torrentInfo.Category,
+                Progress = (int)(torrentInfo.Progress *100),
+                Status = torrentInfo.State
+            });
+        }
+        return torrents;
     }
 
     public async Task<Torrent> GetTorrent(string hash)
