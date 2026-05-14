@@ -13,7 +13,7 @@ jobs:
         run: |
           # Переходим в папку проекта и записываем секрет в ${{ github.event.repository.name }}/.env
           mkdir -p ${{vars.DEPLOY_PATH}}/${{ github.event.repository.name }}/HCP.Torrents/
-          echo "TORRENTHOST=http://host.docker.internal:8080" > ${{vars.DEPLOY_PATH}}/${{ github.event.repository.name }}/HCP.Torrents/.env 
+          echo "TORRENTHOST=${{ secrets.TORRENTHOST }} > ${{vars.DEPLOY_PATH}}/${{ github.event.repository.name }}/HCP.Torrents/.env 
           echo "BOTAPI=${{ secrets.BOTAPI }}" >> ${{vars.DEPLOY_PATH}}/${{ github.event.repository.name }}/HCP.Torrents/.env 
           echo "ADMIN=${{ secrets.ADMIN }}" >> ${{vars.DEPLOY_PATH}}/${{ github.event.repository.name }}/HCP.Torrents/.env 
   call-deploy:
