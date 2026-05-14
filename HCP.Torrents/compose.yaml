@@ -1,8 +1,6 @@
 ﻿services:
   app-service:
     build: .
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     container_name: hcp.torrents
     ports:
       - "6060:8080"  
@@ -13,5 +11,5 @@
       - app-network
 
 networks:
-  app-network:
-    driver: bridge
+  hcp-network:
+    external: true
