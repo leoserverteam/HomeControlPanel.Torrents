@@ -21,3 +21,4 @@ jobs:
     uses: leoserverteam/DevOpsTemplates/.github/workflows/dotnetcompose.yml@main
     with:
       project_name: "${{ github.event.repository.name }}"
+      docker_compose_path: "HCP.Torrents/compose.yml"
